@@ -116,5 +116,10 @@ async def on_component(event: Component):
 
             #sort by score
             players_score = dict(sorted(players_score.items(), key=lambda item: item[1], reverse=True))
-            await message.edit(content=str(players_score),components=start_button)
+
+            markdown_output = "### Scores des Joueurs\n\n"
+            for user, score in players_score.items():
+                markdown_output += f"- **<@{user}>**: {score}/{NUMBERS_OF_QUESTIONS}\n"
+
+            await message.edit(content=str(markdown_output),components=start_button)
 bot.start()
