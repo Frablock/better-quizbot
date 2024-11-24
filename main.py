@@ -15,7 +15,7 @@ TOKEN = dotenv_values(".env")["TOKEN"]
 
 EMOTES = ("1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟")
 
-NUMBERS_OF_QUESTIONS = 5
+NUMBERS_OF_QUESTIONS = 2
 
 waiting_time = 20
 
@@ -101,12 +101,12 @@ async def on_component(event: Component):
                     for user in users_reacts:
                         if user.id not in has_votes:
                             players_score[str(user.id)] = players_score.get(str(user.id), 0) + answer[1]
-                            has_votes += user.id
+                            has_votes += str(user.id)
 
                 # Deleting all reactions
                 while (len(reacts)>0):
                     for i in reacts:
                         await i.remove()
                 await asyncio.sleep(2)
-            message.edit(str(players_score),components=start_button)
+            await message.edit(content=str(players_score),components=start_button)
 bot.start()
