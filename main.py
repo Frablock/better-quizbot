@@ -58,7 +58,7 @@ async def on_component(event: Component):
 
             components = Button(
                 style=ButtonStyle.PRIMARY,
-                label="Répondez via les réactions ci-dessous",
+                label="Répondez via les réactions ci-dessous. Une seule réponse est valide",
                 custom_id="start_quiz",
                 disabled=True,
             )
@@ -95,18 +95,22 @@ async def on_component(event: Component):
 
                 reacts = message.reactions
 
+                # Couting points
                 has_votes = []
                 for i, answer in enumerate(answers):
                     users_reacts = await reacts[i].users(limit=0, after=None).fetch()
+                    print(users_reacts)
                     for user in users_reacts:
-                        if user.id not in has_votes:
+                        if str(user.id) not in has_votes:
                             players_score[str(user.id)] = players_score.get(str(user.id), 0) + answer[1]
                             has_votes += str(user.id)
+                        else:
+                            players_score[str(user.id)] = players_score.get(str(user.id), 0) -1
 
                 # Deleting all reactions
                 while (len(reacts)>0):
                     for i in reacts:
                         await i.remove()
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
             await message.edit(content=str(players_score),components=start_button)
 bot.start()
