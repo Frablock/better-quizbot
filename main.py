@@ -4,6 +4,7 @@ from interactions import Button, ButtonStyle
 from interactions import SlashContext
 from interactions import Client, Intents, listen, slash_command
 from interactions.api.events import Component
+#from interactions.api.http.http_client import ReactionRequests
 
 import sqlite3
 import random
@@ -22,6 +23,13 @@ bot = Client(token=TOKEN, intents=Intents.DEFAULT)
 
 con = sqlite3.connect("better-quizbot.db")
 
+start_button = Button(
+    style=ButtonStyle.PRIMARY,
+    label="Commencer le quiz",
+    custom_id="start_quiz",
+    disabled=False
+)
+
 @listen()
 async def on_ready():
     print("The bot is now running")
@@ -30,13 +38,8 @@ async def on_ready():
 @slash_command(name="create_button", description="Créer un bouton pour lancer un quiz")
 async def create_button(ctx: SlashContext):
     await ctx.send("Création du bouton",ephemeral=True)
-    components = Button(
-        style=ButtonStyle.PRIMARY,
-        label="Commencer le quiz",
-        custom_id="start_quiz",
-    )
 
-    await ctx.channel.send(components=components)
+    await ctx.channel.send(components=start_button)
 
 @listen(Component)
 async def on_component(event: Component):
@@ -51,6 +54,15 @@ async def on_component(event: Component):
             message_id = ctx.channel.last_message_id
             message = ctx.channel.get_message(message_id)
 
+            players_score = {}
+
+            components = Button(
+                style=ButtonStyle.PRIMARY,
+                label="Répondez via les réactions ci-dessous",
+                custom_id="start_quiz",
+                disabled=True,
+            )
+
             for _ in range(NUMBERS_OF_QUESTIONS):
                 question = random.choice(questions)
 
@@ -58,15 +70,8 @@ async def on_component(event: Component):
                     int(question[0])
                 ]
                 cur = con.cursor()
-                cur.execute("SELECT answer FROM answers WHERE questionID = ?", data)
+                cur.execute("SELECT answer, is_correct FROM answers WHERE questionID = ?", data)
                 answers = cur.fetchall()
-
-                components = Button(
-                    style=ButtonStyle.PRIMARY,
-                    label="Commencer le quiz",
-                    custom_id="start_quiz",
-                    disabled=True,
-                )
 
                 answers = answers[:10:]
                 random.shuffle(answers)
@@ -82,8 +87,26 @@ async def on_component(event: Component):
 
                 await message.edit(content="# "+question[1]+"\n\t"+"\n\t".join(answers_list)+"\nFin <t:"+str(timestamp).split(".")[0]+":R>", components=components)
 
-                
+                # Adding all reactions
                 for i in range(len(answers_list)):
                     await message.add_reaction(emoji=EMOTES[i])
+
                 await asyncio.sleep(waiting_time)
+
+                reacts = message.reactions
+
+                has_votes = []
+                for i, answer in enumerate(answers):
+                    users_reacts = await reacts[i].users(limit=0, after=None).fetch()
+                    for user in users_reacts:
+                        if user.id not in has_votes:
+                            players_score[str(user.id)] = players_score.get(str(user.id), 0) + answer[1]
+                            has_votes += user.id
+
+                # Deleting all reactions
+                while (len(reacts)>0):
+                    for i in reacts:
+                        await i.remove()
+                await asyncio.sleep(2)
+            message.edit(str(players_score),components=start_button)
 bot.start()
