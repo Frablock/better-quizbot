@@ -7,6 +7,7 @@ from interactions.api.events import Component
 
 import sqlite3
 import random
+import asyncio
 from datetime import datetime, timezone, timedelta
 
 TOKEN = dotenv_values(".env")["TOKEN"]
