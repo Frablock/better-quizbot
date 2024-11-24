@@ -1,4 +1,5 @@
 from dotenv import dotenv_values
+from os import environ
 
 from interactions import Button, ButtonStyle
 from interactions import SlashContext
@@ -10,6 +11,11 @@ import sqlite3
 import random
 import asyncio
 from datetime import datetime, timezone, timedelta
+
+ENV = {
+    **dotenv_values(".env"),
+    **environ, # override loaded values with environment variables
+}
 
 TOKEN = dotenv_values(".env")["TOKEN"]
 
