@@ -48,6 +48,9 @@ async def on_component(event: Component):
             cur.execute("SELECT * FROM questions")
             questions = cur.fetchall()
 
+            message_id = ctx.channel.last_message_id
+            message = ctx.channel.get_message(message_id)
+
             for _ in range(NUMBERS_OF_QUESTIONS):
                 question = random.choice(questions)
 
@@ -77,11 +80,10 @@ async def on_component(event: Component):
 
                 timestamp = td.total_seconds()
 
-                await ctx.edit_origin(content="# "+question[1]+"\n\t"+"\n\t".join(answers_list)+"\n<t:"+str(timestamp).split(".")[0]+":R>", components=components)
+                await message.edit(content="# "+question[1]+"\n\t"+"\n\t".join(answers_list)+"\nFin <t:"+str(timestamp).split(".")[0]+":R>", components=components)
 
-                message_id = ctx.channel.last_message_id
-                a = ctx.channel.get_message(message_id)
+                
                 for i in range(len(answers_list)):
-                    await a.add_reaction(emoji=EMOTES[i])
+                    await message.add_reaction(emoji=EMOTES[i])
                 await asyncio.sleep(waiting_time)
 bot.start()
