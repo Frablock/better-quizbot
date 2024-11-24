@@ -13,7 +13,7 @@ TOKEN = dotenv_values(".env")["TOKEN"]
 
 EMOTES = ("1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟")
 
-NUMBERS_OF_QUESTIONS = 10
+NUMBERS_OF_QUESTIONS = 5
 
 waiting_time = 20
 

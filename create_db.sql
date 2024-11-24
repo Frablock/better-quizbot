@@ -131,3 +131,40 @@ VALUES
 (13, 'Ils sont tous utiles', FALSE),
 (13, 'On peut `rm -rf` les données problématiques', FALSE),
 (13, 'Les gauchistes ne les apprécies pas', FALSE);
+
+INSERT INTO questions (question) VALUES ('Quel geste symbolise souvent la résistance chez les militants de gauche ?');
+
+INSERT INTO answers (questionID, answer, is_correct)
+VALUES
+(14, 'Le poing levé', TRUE),
+(14, 'Le pouce en l’air', FALSE),
+(14, 'L’applaudissement', FALSE),
+(14, 'La révérence', FALSE);
+
+INSERT INTO questions (question) VALUES ('Quel groupe social est souvent défendu par les politiques de gauche ?');
+
+INSERT INTO answers (questionID, answer, is_correct)
+VALUES
+(15, 'Les travailleurs', TRUE),
+(15, 'Les milliardaires', FALSE),
+(15, 'Les propriétaires de yachts', FALSE),
+(15, 'Les influenceurs', FALSE);
+
+INSERT INTO questions (question) VALUES ('Quel système économique est souvent présenté comme l’opposé du capitalisme ?');
+
+INSERT INTO answers (questionID, answer, is_correct)
+VALUES
+(16, 'Le communisme', TRUE),
+(16, 'Le libéralisme', FALSE),
+(16, 'Le mercantilisme', FALSE),
+(16, 'Le féodalisme', FALSE);
+
+INSERT INTO questions (question) VALUES ('Quel personne de gauche a déclaré : "On ne résout pas les problèmes avec les modes de pensée qui les ont engendrés" ?');
+
+INSERT INTO answers (questionID, answer, is_correct)
+VALUES
+(17, 'Albert Einstein', TRUE),
+(17, 'Jean-Luc Mélenchon', FALSE),
+(17, 'Karl Marx', FALSE),
+(17, 'Noam Chomsky', FALSE);
+
