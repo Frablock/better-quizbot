@@ -47,6 +47,7 @@ async def on_component(event: Component):
 
     match ctx.custom_id:
         case "start_quiz":
+            await ctx.send("Merci d'avoir lancé un quiz, amusez-vous bien", ephemeral=True,suppress_error=True)
             cur = con.cursor()
             cur.execute("SELECT * FROM questions")
             questions = cur.fetchall()
@@ -99,18 +100,21 @@ async def on_component(event: Component):
                 has_votes = []
                 for i, answer in enumerate(answers):
                     users_reacts = await reacts[i].users(limit=0, after=None).fetch()
-                    print(users_reacts)
                     for user in users_reacts:
-                        if str(user.id) not in has_votes:
-                            players_score[str(user.id)] = players_score.get(str(user.id), 0) + answer[1]
-                            has_votes += str(user.id)
-                        else:
-                            players_score[str(user.id)] = players_score.get(str(user.id), 0) -1
+                        if not user.bot:
+                            if str(user.id) not in has_votes:
+                                players_score[str(user.id)] = players_score.get(str(user.id), 0) + answer[1]
+                                has_votes += str(user.id)
+                            else:
+                                players_score[str(user.id)] = players_score.get(str(user.id), 0) -1
 
                 # Deleting all reactions
                 while (len(reacts)>0):
                     for i in reacts:
                         await i.remove()
                 await asyncio.sleep(1)
+
+            #sort by score
+            players_score = dict(sorted(players_score.items(), key=lambda item: item[1], reverse=True))
             await message.edit(content=str(players_score),components=start_button)
 bot.start()
