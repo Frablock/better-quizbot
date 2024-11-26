@@ -1,12 +1,13 @@
 from dotenv import dotenv_values
-from os import environ
+from os import environ, path, makedirs
 
 from interactions import Button, ButtonStyle
 from interactions import SlashContext
 from interactions import Client, Intents, listen, slash_command
 from interactions.api.events import Component
-#from interactions.api.http.http_client import ReactionRequests
+# from interactions.api.http.http_client import ReactionRequests
 
+import signal
 import sqlite3
 import random
 import asyncio
@@ -14,20 +15,35 @@ from datetime import datetime, timezone, timedelta
 
 ENV = {
     **dotenv_values(".env"),
-    **environ, # override loaded values with environment variables
+    **environ,  # override loaded values with environment variables
 }
 
-TOKEN = dotenv_values(".env")["TOKEN"]
+TOKEN = ENV["TOKEN"]
 
 EMOTES = ("1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟")
 
 NUMBERS_OF_QUESTIONS = 2
-
 waiting_time = 20
 
-bot = Client(token=TOKEN, intents=Intents.DEFAULT)
+DB_PATH = ENV["DB_PATH"]
 
-con = sqlite3.connect("better-quizbot.db")
+print("Init sqlite")
+db_dir = path.dirname(DB_PATH)
+if db_dir and not path.exists(db_dir):
+    print(f"Creating {db_dir}")
+    makedirs(db_dir)
+
+if not path.exists(DB_PATH):
+    print(f"Creating {DB_PATH}")
+    con = sqlite3.connect(DB_PATH)
+    with open("create_db.sql", "r") as f:
+        con.executescript(f.read())
+
+con = sqlite3.connect(DB_PATH)
+
+print("Init bot")
+
+bot = Client(token=TOKEN, intents=Intents.DEFAULT)
 
 start_button = Button(
     style=ButtonStyle.PRIMARY,
@@ -36,16 +52,19 @@ start_button = Button(
     disabled=False
 )
 
+
 @listen()
 async def on_ready():
     print("The bot is now running")
     print(f"This bot is owned by {bot.owner}")
 
+
 @slash_command(name="create_button", description="Créer un bouton pour lancer un quiz")
 async def create_button(ctx: SlashContext):
-    await ctx.send("Création du bouton",ephemeral=True)
+    await ctx.send("Création du bouton", ephemeral=True)
 
     await ctx.channel.send(components=start_button)
+
 
 @listen(Component)
 async def on_component(event: Component):
@@ -53,7 +72,7 @@ async def on_component(event: Component):
 
     match ctx.custom_id:
         case "start_quiz":
-            await ctx.send("Merci d'avoir lancé un quiz, amusez-vous bien", ephemeral=True,suppress_error=True)
+            await ctx.send("Merci d'avoir lancé un quiz, amusez-vous bien", ephemeral=True, suppress_error=True)
             cur = con.cursor()
             cur.execute("SELECT * FROM questions")
             questions = cur.fetchall()
@@ -82,17 +101,18 @@ async def on_component(event: Component):
 
                 answers = answers[:10:]
                 random.shuffle(answers)
-                answers_list = [EMOTES[i]+". "+answer[0] for i, answer in enumerate(answers)]
+                answers_list = [EMOTES[i] + ". " + answer[0] for i, answer in enumerate(answers)]
 
                 now = datetime.now(timezone.utc)
 
                 epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-                td = now - epoch + timedelta(seconds=waiting_time+1)
+                td = now - epoch + timedelta(seconds=waiting_time + 1)
 
                 timestamp = td.total_seconds()
 
-                await message.edit(content="# "+question[1]+"\n\t"+"\n\t".join(answers_list)+"\nFin <t:"+str(timestamp).split(".")[0]+":R>", components=components)
+                await message.edit(content="# " + question[1] + "\n\t" + "\n\t".join(answers_list) + "\nFin <t:" +
+                                           str(timestamp).split(".")[0] + ":R>", components=components)
 
                 # Adding all reactions
                 for i in range(len(answers_list)):
@@ -112,20 +132,31 @@ async def on_component(event: Component):
                                 players_score[str(user.id)] = players_score.get(str(user.id), 0) + answer[1]
                                 has_votes += str(user.id)
                             else:
-                                players_score[str(user.id)] = players_score.get(str(user.id), 0) -1
+                                players_score[str(user.id)] = players_score.get(str(user.id), 0) - 1
 
                 # Deleting all reactions
-                while (len(reacts)>0):
+                while (len(reacts) > 0):
                     for i in reacts:
                         await i.remove()
                 await asyncio.sleep(1)
 
-            #sort by score
+            # sort by score
             players_score = dict(sorted(players_score.items(), key=lambda item: item[1], reverse=True))
 
             markdown_output = "### Scores des Joueurs\n\n"
             for user, score in players_score.items():
                 markdown_output += f"- **<@{user}>**: {score}/{NUMBERS_OF_QUESTIONS}\n"
 
-            await message.edit(content=str(markdown_output),components=start_button)
+            await message.edit(content=str(markdown_output), components=start_button)
+
+
+def stop(self, signum, frame):
+    print("Stopping bot")
+    bot.stop()
+    con.close()
+
+
+signal.signal(signal.SIGINT, stop)
+signal.signal(signal.SIGTERM, stop)
+
 bot.start()
